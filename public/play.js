@@ -65,7 +65,7 @@ uid = uid.substring(uid.indexOf("#") + 1);
 console.log("ID play.js " + uid);
 uid = parseInt(uid);
 socket.emit('newuser', uid, function(data) {
-        id = "https://www.youtube.com/embed/" + data.url + "?enablejsapi=1";
+        id = "https://www.youtube.com/embed/" + data.url + "?enablejsapi=1&controls=0";
         document.getElementById("player").src = id;
         console.log(JSON.stringify(data));
         if (data.started === 1) {
@@ -81,12 +81,6 @@ socket.emit('newuser', uid, function(data) {
                                 $("#pause").removeAttr("disabled");
                         }
                 });
-
-        /*DUMP ARR INTO CHAT-BOX*/
-
-        /* data.chat.forEach(function(item){
-           $("#list").append( "<li>" + item + "</li>");
-         }); */
 
 
 });
@@ -112,12 +106,12 @@ $("#pause").click(function() {
 
 $("#submitname").click(function() { // Add name to chat list
         name = $("#name").val();
-        // socket.emit('addname', $("#name").val(), uid);
+        socket.emit('message', $("#name").val(), uid);
 });
 
-$("#submitmessage").click(function() { // User pressed submit button
+$("#submitmessage").click(function() {
         var msg = ($("#chatmessage").val() + "~" + name);
-        socket.emit('message', msg, uid); // send msg
+        socket.emit('message', msg, uid);
 });
 
 
@@ -125,18 +119,26 @@ socket.on('updatemsg', function(data) {
         if (data._id === uid) {
                 $("#list").text('');
                 data.chat.forEach(function(item) {
-                        console.log(item);
-                        $("#list").append("<li>" + item.substring(item.indexOf('~') + 1) + " " + item.substring(0, item.indexOf('~')) + "</li>");
+                        if (item.includes('~')) {
+                                if (item.includes(name)) {
+                                        $("#list").append("<li class='special'> <div class='person'>" + item.substring(item.indexOf('~') + 1) + "</div>: " + item.substring(0, item.indexOf('~')) + "</li>");
+                                } else {
+                                        $("#list").append("<li> <div class='person'>" + item.substring(item.indexOf('~') + 1) + "</div>: " + item.substring(0, item.indexOf('~')) + "</li>");
+                                }
+                        } else {
+                                $("#list").append("<li> <div class='person'>" + item + "</div> has connected </li>");
+                        }
+                        $('#list li').get(-1).scrollIntoView();
                 });
         } // Auth
 });
 
 
-socket.on('update', function(data) { // Left off here
-        if (data._id === uid) { // User IDs match  
-                if (data.play === 1) { // play
+socket.on('update', function(data) { 
+        if (data._id === uid) {   
+                if (data.play === 1) { 
                         player.playVideo();
-                } else { // User paused
+                } else { 
                         player.pauseVideo();
                 }
         }
